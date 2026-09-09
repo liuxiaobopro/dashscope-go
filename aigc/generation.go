@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"iter"
+	"strings"
 
 	"github.com/liuxiaobopro/dashscope-go/apientities"
 	"github.com/liuxiaobopro/dashscope-go/client"
@@ -67,6 +68,7 @@ type GenerationCallParams struct {
 	// IncrementalOutput In streaming mode, output only new tokens (True) vs. cumulative output (False).
 	IncrementalOutput *bool
 	// EnableSearch Enable web search.
+	// Corresponds to Python Generation.call(..., enable_search=...).
 	EnableSearch *bool
 	// Tools Tool definitions for function calling.
 	Tools []map[string]any
@@ -83,6 +85,8 @@ type GenerationCallParams struct {
 	// TopLogprobs Number of most likely tokens to return at each token position when logprobs is enabled.
 	TopLogprobs *int
 	// SearchOptions Configuration options for web search feature.
+	// Corresponds to Python Generation.call(..., search_options=...).
+	// Example: {"search_strategy": "agent_max"} with EnableSearch for web extractor.
 	SearchOptions map[string]any
 	// ParallelToolCalls Enable parallel tool calls for function calling.
 	ParallelToolCalls *bool
@@ -209,14 +213,16 @@ func buildGenerationInput(model string, prompt any, history []any, messages []ap
 	} else if prompt != nil {
 		input[common.PROMPT] = prompt
 	}
-	if len(model) >= 4 && model[:4] == "qwen" {
+	// Match Python Generation._build_input_parameters: for qwen* models,
+	// enable_search is popped from kwargs and only set when True.
+	if strings.HasPrefix(model, "qwen") {
 		if v, ok := kw["enable_search"]; ok {
 			delete(kw, "enable_search")
 			if b, ok := v.(bool); ok && b {
 				parameters["enable_search"] = true
 			}
 		}
-	} else if len(model) >= 7 && model[:7] == "bailian" {
+	} else if strings.HasPrefix(model, "bailian") {
 		customized, ok := kw["customized_model_id"]
 		delete(kw, "customized_model_id")
 		if !ok || customized == nil {

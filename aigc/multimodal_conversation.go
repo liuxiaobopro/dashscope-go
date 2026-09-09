@@ -49,8 +49,11 @@ type MultiModalConversationCallParams struct {
 	OCROptions        map[string]any
 	Logprobs          *bool
 	TopLogprobs       *int
-	Extra             map[string]any
-	Headers           map[string]string
+	// SearchOptions passed via kwargs in Python MultiModalConversation.call(**kwargs).
+	// Explicit field for Go; serialized as search_options.
+	SearchOptions map[string]any
+	Extra         map[string]any
+	Headers       map[string]string
 	// BaseAddress overrides the default HTTP API base (e.g. https://dashscope.aliyuncs.com/api/v1).
 	BaseAddress string
 }
@@ -113,6 +116,9 @@ func (p *MultiModalConversationCallParams) toParams() map[string]any {
 	}
 	if p.TopLogprobs != nil {
 		kw["top_logprobs"] = *p.TopLogprobs
+	}
+	if p.SearchOptions != nil {
+		kw["search_options"] = p.SearchOptions
 	}
 	for k, v := range p.Extra {
 		kw[k] = v
